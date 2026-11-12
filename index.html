@@ -187,6 +187,31 @@
         
         .empty-cart { text-align: center; color: var(--hint-color); margin-top: 40px; font-size: 15px; }
         .loading { text-align: center; color: var(--hint-color); padding: 20px; grid-column: span 2; }
+        
+        .profile-card {
+            background: var(--card-bg);
+            padding: 20px;
+            border-radius: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            border: 1px solid #2a2a35;
+        }
+        .profile-row { display: flex; justify-content: space-between; font-size: 15px; }
+        .profile-label { color: var(--hint-color); }
+        .support-btn {
+            background: #2a2a35;
+            color: white;
+            border: none;
+            padding: 16px;
+            border-radius: 12px;
+            font-size: 15px;
+            font-weight: bold;
+            text-align: center;
+            text-decoration: none;
+            display: block;
+            margin-top: 10px;
+        }
     </style>
 </head>
 <body>
@@ -195,6 +220,7 @@
         <h1>VCATS</h1>
     </div>
 
+    <!-- КАТАЛОГ -->
     <div id="store-view">
         <div class="banner">
             <h2>🔥 Добро пожаловать в VCATS</h2>
@@ -213,6 +239,7 @@
         </div>
     </div>
 
+    <!-- КОРЗИНА -->
     <div id="cart-view" class="cart-view">
         <h2>🛒 Корзина</h2>
         <div id="cart-items"></div>
@@ -226,6 +253,28 @@
         </div>
     </div>
 
+    <!-- ПРОФИЛЬ -->
+    <div id="profile-view" class="cart-view">
+        <h2>👤 Профиль</h2>
+        
+        <div class="profile-card">
+            <div class="profile-row">
+                <span class="profile-label">Ваш ID:</span>
+                <span id="tg-user-id">Загрузка...</span>
+            </div>
+            <div class="profile-row">
+                <span class="profile-label">Статус:</span>
+                <span style="color: var(--accent-color); font-weight: bold;">Клиент</span>
+            </div>
+        </div>
+
+        <!-- Замените name_castsd на свой юзернейм в Telegram -->
+        <a href="https://t.me/name_castsd" target="_blank" class="support-btn">
+            ✉️ Связаться с поддержкой
+        </a>
+    </div>
+
+    <!-- НИЖНЕЕ МЕНЮ -->
     <div class="bottom-nav">
         <div class="nav-item active" id="nav-store" onclick="showTab('store')">
             <span class="nav-icon">🛍</span>
@@ -235,7 +284,7 @@
             <span class="nav-icon">🛒</span>
             Корзина <span id="cart-badge" style="display:none; background:var(--accent-color); color:white; border-radius:50%; padding:2px 6px; font-size:10px; position:absolute; transform:translate(10px,-5px);">0</span>
         </div>
-        <div class="nav-item">
+        <div class="nav-item" id="nav-profile" onclick="showTab('profile')">
             <span class="nav-icon">👤</span>
             Профиль
         </div>
@@ -250,8 +299,15 @@
         let products = [];
         let cart = [];
 
-        // ВАША ССЫЛКА НА RENDER
+        // ССЫЛКА НА ВАШ API НА RENDER
         const API_URL = 'https://shop-miniapp-1-fbot.onrender.com/api/products';
+
+        // Загрузка ID пользователя в профиль
+        if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
+            document.getElementById('tg-user-id').innerText = tg.initDataUnsafe.user.id;
+        } else {
+            document.getElementById('tg-user-id').innerText = "Гость";
+        }
 
         async function loadProducts() {
             try {
@@ -333,9 +389,11 @@
         function showTab(tab) {
             document.getElementById('store-view').style.display = tab === 'store' ? 'block' : 'none';
             document.getElementById('cart-view').style.display = tab === 'cart' ? 'flex' : 'none';
+            document.getElementById('profile-view').style.display = tab === 'profile' ? 'flex' : 'none';
             
             document.getElementById('nav-store').classList.toggle('active', tab === 'store');
             document.getElementById('nav-cart').classList.toggle('active', tab === 'cart');
+            document.getElementById('nav-profile').classList.toggle('active', tab === 'profile');
         }
 
         function checkout() {
