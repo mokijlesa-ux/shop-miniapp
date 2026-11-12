@@ -13,7 +13,6 @@
             --hint-color: #8b8b9a;
             --accent-color: #8b5cf6;
             --btn-bg: #2a2a35;
-            --success-color: #10b981;
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
@@ -72,7 +71,6 @@
             font-size: 14px;
             font-weight: 600;
             white-space: nowrap;
-            transition: 0.2s;
         }
         .cat-btn.active { background: var(--accent-color); color: #fff; box-shadow: 0 0 15px rgba(139, 92, 246, 0.4); }
 
@@ -111,7 +109,6 @@
             font-weight: 600;
             font-size: 13px;
             cursor: pointer;
-            transition: 0.1s;
         }
         .add-btn:active { background: var(--accent-color); transform: scale(0.98); }
 
@@ -136,7 +133,6 @@
             font-size: 11px; 
             gap: 4px; 
             cursor: pointer;
-            transition: 0.2s;
         }
         .nav-item.active { color: var(--accent-color); }
         .nav-icon { font-size: 22px; }
@@ -190,7 +186,7 @@
         .checkout-btn:active { transform: scale(0.98); }
         
         .empty-cart { text-align: center; color: var(--hint-color); margin-top: 40px; font-size: 15px; }
-        .loading { text-align: center; color: var(--hint-color); padding: 20px; }
+        .loading { text-align: center; color: var(--hint-color); padding: 20px; grid-column: span 2; }
     </style>
 </head>
 <body>
@@ -213,8 +209,7 @@
         </div>
 
         <div class="grid" id="product-grid">
-            <!-- Товары будут загружены из API -->
-            <div class="loading" style="grid-column: span 2;">Загрузка товаров...</div>
+            <div class="loading">Загрузка товаров...</div>
         </div>
     </div>
 
@@ -252,15 +247,12 @@
         tg.setHeaderColor('#0f0f13');
         tg.setBackgroundColor('#0f0f13');
 
-        // Массив товаров (изначально пустой)
         let products = [];
         let cart = [];
 
-        // АДРЕС ВАШЕГО API (Пока локальный)
-        // Когда выложите бота на хостинг (Render), замените этот адрес на ссылку оттуда!
-        const API_URL = 'http://127.0.0.1:8000/api/products';
+        // ВАША ССЫЛКА НА RENDER
+        const API_URL = 'https://shop-miniapp-1-fbot.onrender.com/api/products';
 
-        // Функция загрузки товаров из базы данных бота
         async function loadProducts() {
             try {
                 const response = await fetch(API_URL);
@@ -269,18 +261,17 @@
                 products = await response.json();
                 
                 if (products.length === 0) {
-                    document.getElementById('product-grid').innerHTML = '<div class="loading" style="grid-column: span 2;">В магазине пока нет товаров</div>';
+                    document.getElementById('product-grid').innerHTML = '<div class="loading">В магазине пока нет товаров</div>';
                     return;
                 }
                 
                 renderProducts();
             } catch (error) {
                 console.error("Ошибка загрузки:", error);
-                document.getElementById('product-grid').innerHTML = '<div class="loading" style="grid-column: span 2; color: #ef4444;">Не удалось загрузить товары. Убедитесь, что сервер API запущен (uvicorn).</div>';
+                document.getElementById('product-grid').innerHTML = '<div class="loading" style="color: #ef4444;">Не удалось загрузить товары.<br>Сервер просыпается, подождите 30 сек и обновите.</div>';
             }
         }
 
-        // Отрисовка карточек товаров
         function renderProducts() {
             const grid = document.getElementById('product-grid');
             grid.innerHTML = products.map(p => `
@@ -293,7 +284,6 @@
             `).join('');
         }
 
-        // Добавление в корзину
         function addToCart(id) {
             const product = products.find(p => p.id === id);
             const cartItem = cart.find(item => item.id === id);
@@ -308,7 +298,6 @@
             renderCart();
         }
 
-        // Отрисовка корзины
         function renderCart() {
             const container = document.getElementById('cart-items');
             const totalEl = document.getElementById('cart-total');
@@ -341,7 +330,6 @@
             badgeEl.style.display = 'inline-block';
         }
 
-        // Переключение вкладок
         function showTab(tab) {
             document.getElementById('store-view').style.display = tab === 'store' ? 'block' : 'none';
             document.getElementById('cart-view').style.display = tab === 'cart' ? 'flex' : 'none';
@@ -350,7 +338,6 @@
             document.getElementById('nav-cart').classList.toggle('active', tab === 'cart');
         }
 
-        // Оформление заказа (отправка данных в бота)
         function checkout() {
             if (cart.length === 0) {
                 if (tg.showAlert) tg.showAlert("Корзина пуста!");
@@ -366,7 +353,6 @@
             tg.sendData(JSON.stringify(orderData));
         }
 
-        // Запуск при загрузке страницы
         loadProducts();
         renderCart();
     </script>
