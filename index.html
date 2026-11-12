@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>VCATS Shop</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        :root {
+            --bg-color: #0f0f13;
+            --card-bg: #1c1c24;
+            --text-color: #ffffff;
+            --hint-color: #8b8b9a;
+            --accent-color: #8b5cf6; /* Фиолетовый неон */
+            --btn-bg: #2a2a35;
+            --success-color: #10b981;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
+        
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            padding-bottom: 80px; /* Место под нижнее меню */
+            overflow-x: hidden;
+        }
+
+        /* Шапка */
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 15px;
+            background: var(--bg-color);
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            border-bottom: 1px solid #1c1c24;
+        }
+        .header h1 { 
+            font-size: 20px; 
+            font-weight: 900; 
+            letter-spacing: 2px; 
+            background: linear-gradient(90deg, #a78bfa, #8b5cf6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        /* Баннер */
+        .banner {
+            margin: 15px;
+            padding: 20px;
+            background: linear-gradient(135deg, #2a1b54 0%, #1c1c24 100%);
+            border-radius: 16px;
+            border: 1px solid #3b2d6b;
+        }
+        .banner h2 { font-size: 16px; margin-bottom: 8px; }
+        .banner p { font-size: 12px; color: var(--hint-color); line-height: 1.4; }
+
+        /* Категории */
+        .categories {
+            display: flex;
+            gap: 10px;
+            padding: 0 15px 15px;
+            overflow-x: auto;
+            scrollbar-width: none;
+        }
+        .categories::-webkit-scrollbar { display: none; }
+        .cat-btn {
+            background: var(--card-bg);
+            color: var(--hint-color);
+            border: none;
+            padding: 10px 20px;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 600;
+            white-space: nowrap;
+            transition: 0.2s;
+        }
+        .cat-btn.active { background: var(--accent-color); color: #fff; box-shadow: 0 0 15px rgba(139, 92, 246, 0.4); }
+
+        /* Сетка товаров */
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            padding: 0 15px;
+        }
+        .product-card {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+        .product-img {
+            width: 100%;
+            height: 140px;
+            background: #2a2a35;
+            border-radius: 12px;
+            object-fit: cover;
+            margin-bottom: 10px;
+        }
+        .product-title { font-size: 13px; font-weight: 600; margin-bottom: 5px; line-height: 1.2; }
+        .product-price { font-size: 16px; font-weight: 800; color: #fff; margin-top: auto; }
+        
+        /* Кнопка добавления */
+        .add-btn {
+            background: var(--btn-bg);
+            color: #fff;
+            border: none;
+            padding: 10px;
+            border-radius: 10px;
+            margin-top: 10px;
+            font-weight: 600;
+            font-size: 13px;
+            cursor: pointer;
+            transition: 0.1s;
+        }
+        .add-btn:active { background: var(--accent-color); transform: scale(0.98); }
+
+        /* Нижнее меню */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: rgba(28, 28, 36, 0.95);
+            backdrop-filter: blur(10px);
+            display: flex;
+            justify-content: space-around;
+            padding: 12px 0;
+            border-top: 1px solid #2a2a35;
+            z-index: 20;
+        }
+        .nav-item { 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            color: var(--hint-color); 
+            font-size: 11px; 
+            gap: 4px; 
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .nav-item.active { color: var(--accent-color); }
+        .nav-icon { font-size: 22px; }
+
+        /* Корзина (скрыта по умолчанию) */
+        .cart-view {
+            display: none;
+            padding: 15px;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .cart-view h2 { font-size: 20px; margin-bottom: 10px; }
+        .cart-item {
+            background: var(--card-bg);
+            padding: 15px;
+            border-radius: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border: 1px solid #2a2a35;
+        }
+        .cart-item-info { display: flex; flex-direction: column; gap: 4px; }
+        .cart-item-name { font-weight: 600; font-size: 14px; }
+        .cart-item-qty { color: var(--hint-color); font-size: 13px; }
+        .cart-item-price { font-weight: 800; font-size: 15px; }
+        
+        .cart-summary {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px dashed #2a2a35;
+        }
+        .cart-total-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 18px;
+            font-weight: 800;
+            margin-bottom: 20px;
+        }
+        
+        .checkout-btn {
+            background: var(--accent-color);
+            color: white;
+            border: none;
+            padding: 16px;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: bold;
+            width: 100%;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(139, 92, 246, 0.4);
+        }
+        .checkout-btn:active { transform: scale(0.98); }
+        
+        .empty-cart { text-align: center; color: var(--hint-color); margin-top: 40px; font-size: 15px; }
+    </style>
+</head>
+<body>
+
+    <!-- Шапка -->
+    <div class="header">
+        <h1>VCATS</h1>
+    </div>
+
+    <!-- Витрина (Каталог) -->
+    <div id="store-view">
+        <!-- Баннер -->
+        <div class="banner">
+            <h2>🔥 Добро пожаловать в VCATS</h2>
+            <p>Только оригинальные товары. Быстрая доставка и самовывоз. 18+</p>
+        </div>
+
+        <!-- Категории -->
+        <div class="categories">
+            <button class="cat-btn active">Все товары</button>
+            <button class="cat-btn">Подсы</button>
+            <button class="cat-btn">Жидкости</button>
+            <button class="cat-btn">Расходники</button>
+        </div>
+
+        <!-- Сетка товаров -->
+        <div class="grid" id="product-grid">
+            <!-- Карточки товаров генерируются в JS -->
+        </div>
+    </div>
+
+    <!-- Корзина -->
+    <div id="cart-view" class="cart-view">
+        <h2>🛒 Корзина</h2>
+        <div id="cart-items"></div>
+        
+        <div class="cart-summary" id="cart-summary" style="display: none;">
+            <div class="cart-total-row">
+                <span>Итого:</span>
+                <span><span id="cart-total">0</span> ₽</span>
+            </div>
+            <button class="checkout-btn" onclick="checkout()">Оформить заказ</button>
+        </div>
+    </div>
+
+    <!-- Нижнее меню -->
+    <div class="bottom-nav">
+        <div class="nav-item active" id="nav-store" onclick="showTab('store')">
+            <span class="nav-icon">🛍</span>
+            Каталог
+        </div>
+        <div class="nav-item" id="nav-cart" onclick="showTab('cart')">
+            <span class="nav-icon">🛒</span>
+            Корзина <span id="cart-badge" style="display:none; background:var(--accent-color); color:white; border-radius:50%; padding:2px 6px; font-size:10px; position:absolute; transform:translate(10px,-5px);">0</span>
+        </div>
+        <div class="nav-item">
+            <span class="nav-icon">👤</span>
+            Профиль
+        </div>
+    </div>
+
+    <script>
+        // Инициализация Telegram Web App
+        const tg = window.Telegram.WebApp;
+        tg.expand(); // Развернуть на весь экран
+        tg.setHeaderColor('#0f0f13');
+        tg.setBackgroundColor('#0f0f13');
+
+        // Временные тестовые данные
+        const products = [
+            { id: 1, name: "Waka Pod 10000", price: 1200, image: "https://via.placeholder.com/150x150/2a2a35/ffffff?text=Pod" },
+            { id: 2, name: "Liquid Mango 20mg", price: 350, image: "https://via.placeholder.com/150x150/2a2a35/ffffff?text=Liquid" },
+            { id: 3, name: "Elf Bar 5000", price: 1500, image: "https://via.placeholder.com/150x150/2a2a35/ffffff?text=Elf" },
+            { id: 4, name: "Испаритель Xros", price: 250, image: "https://via.placeholder.com/150x150/2a2a35/ffffff?text=Coil" }
+        ];
+
+        let cart = [];
+
+        // Отрисовка товаров
+        function renderProducts() {
+            const grid = document.getElementById('product-grid');
+            grid.innerHTML = products.map(p => `
+                <div class="product-card">
+                    <img src="${p.image}" class="product-img" alt="${p.name}">
+                    <div class="product-title">${p.name}</div>
+                    <div class="product-price">${p.price} ₽</div>
+                    <button class="add-btn" onclick="addToCart(${p.id})">В корзину</button>
+                </div>
+            `).join('');
+        }
+
+        // Добавление в корзину
+        function addToCart(id) {
+            const product = products.find(p => p.id === id);
+            const cartItem = cart.find(item => item.id === id);
+            
+            if (cartItem) {
+                cartItem.qty++;
+            } else {
+                cart.push({ ...product, qty: 1 });
+            }
+            
+            // Вибрация при добавлении
+            if (tg.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
+            
+            renderCart();
+        }
+
+        // Отрисовка корзины
+        function renderCart() {
+            const container = document.getElementById('cart-items');
+            const totalEl = document.getElementById('cart-total');
+            const summaryEl = document.getElementById('cart-summary');
+            const badgeEl = document.getElementById('cart-badge');
+            
+            if (cart.length === 0) {
+                container.innerHTML = '<div class="empty-cart">Ваша корзина пока пуста</div>';
+                summaryEl.style.display = 'none';
+                badgeEl.style.display = 'none';
+                return;
+            }
+
+            container.innerHTML = cart.map(item => `
+                <div class="cart-item">
+                    <div class="cart-item-info">
+                        <div class="cart-item-name">${item.name}</div>
+                        <div class="cart-item-qty">${item.qty} шт.</div>
+                    </div>
+                    <div class="cart-item-price">${item.price * item.qty} ₽</div>
+                </div>
+            `).join('');
+
+            const total = cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
+            totalEl.innerText = total;
+            summaryEl.style.display = 'block';
+            
+            // Обновляем бейдж на иконке корзины
+            const totalItems = cart.reduce((sum, item) => sum + item.qty, 0);
+            badgeEl.innerText = totalItems;
+            badgeEl.style.display = 'inline-block';
+        }
+
+        // Переключение вкладок
+        function showTab(tab) {
+            document.getElementById('store-view').style.display = tab === 'store' ? 'block' : 'none';
+            document.getElementById('cart-view').style.display = tab === 'cart' ? 'flex' : 'none';
+            
+            // Подсветка меню
+            document.getElementById('nav-store').classList.toggle('active', tab === 'store');
+            document.getElementById('nav-cart').classList.toggle('active', tab === 'cart');
+        }
+
+        // Оформление заказа (Отправка данных боту)
+        function checkout() {
+            if (cart.length === 0) {
+                if (tg.showAlert) tg.showAlert("Корзина пуста!");
+                return;
+            }
+            
+            // Формируем данные для бота
+            const orderData = {
+                action: "create_order",
+                items: cart,
+                total: cart.reduce((sum, item) => sum + (item.price * item.qty), 0)
+            };
+
+            // Отправляем данные боту и закрываем окно
+            tg.sendData(JSON.stringify(orderData));
+        }
+
+        // Запуск при загрузке
+        renderProducts();
+        renderCart();
+    </script>
+</body>
+</html>
