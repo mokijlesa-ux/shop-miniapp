@@ -11,7 +11,7 @@
             --card-bg: #1c1c24;
             --text-color: #ffffff;
             --hint-color: #8b8b9a;
-            --accent-color: #8b5cf6; /* Фиолетовый неон */
+            --accent-color: #8b5cf6;
             --btn-bg: #2a2a35;
             --success-color: #10b981;
         }
@@ -21,11 +21,10 @@
         body {
             background-color: var(--bg-color);
             color: var(--text-color);
-            padding-bottom: 80px; /* Место под нижнее меню */
+            padding-bottom: 80px;
             overflow-x: hidden;
         }
 
-        /* Шапка */
         .header {
             display: flex;
             align-items: center;
@@ -46,7 +45,6 @@
             -webkit-text-fill-color: transparent;
         }
 
-        /* Баннер */
         .banner {
             margin: 15px;
             padding: 20px;
@@ -57,7 +55,6 @@
         .banner h2 { font-size: 16px; margin-bottom: 8px; }
         .banner p { font-size: 12px; color: var(--hint-color); line-height: 1.4; }
 
-        /* Категории */
         .categories {
             display: flex;
             gap: 10px;
@@ -79,7 +76,6 @@
         }
         .cat-btn.active { background: var(--accent-color); color: #fff; box-shadow: 0 0 15px rgba(139, 92, 246, 0.4); }
 
-        /* Сетка товаров */
         .grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -105,7 +101,6 @@
         .product-title { font-size: 13px; font-weight: 600; margin-bottom: 5px; line-height: 1.2; }
         .product-price { font-size: 16px; font-weight: 800; color: #fff; margin-top: auto; }
         
-        /* Кнопка добавления */
         .add-btn {
             background: var(--btn-bg);
             color: #fff;
@@ -120,7 +115,6 @@
         }
         .add-btn:active { background: var(--accent-color); transform: scale(0.98); }
 
-        /* Нижнее меню */
         .bottom-nav {
             position: fixed;
             bottom: 0;
@@ -147,7 +141,6 @@
         .nav-item.active { color: var(--accent-color); }
         .nav-icon { font-size: 22px; }
 
-        /* Корзина (скрыта по умолчанию) */
         .cart-view {
             display: none;
             padding: 15px;
@@ -197,24 +190,21 @@
         .checkout-btn:active { transform: scale(0.98); }
         
         .empty-cart { text-align: center; color: var(--hint-color); margin-top: 40px; font-size: 15px; }
+        .loading { text-align: center; color: var(--hint-color); padding: 20px; }
     </style>
 </head>
 <body>
 
-    <!-- Шапка -->
     <div class="header">
         <h1>VCATS</h1>
     </div>
 
-    <!-- Витрина (Каталог) -->
     <div id="store-view">
-        <!-- Баннер -->
         <div class="banner">
             <h2>🔥 Добро пожаловать в VCATS</h2>
             <p>Только оригинальные товары. Быстрая доставка и самовывоз. 18+</p>
         </div>
 
-        <!-- Категории -->
         <div class="categories">
             <button class="cat-btn active">Все товары</button>
             <button class="cat-btn">Подсы</button>
@@ -222,13 +212,12 @@
             <button class="cat-btn">Расходники</button>
         </div>
 
-        <!-- Сетка товаров -->
         <div class="grid" id="product-grid">
-            <!-- Карточки товаров генерируются в JS -->
+            <!-- Товары будут загружены из API -->
+            <div class="loading" style="grid-column: span 2;">Загрузка товаров...</div>
         </div>
     </div>
 
-    <!-- Корзина -->
     <div id="cart-view" class="cart-view">
         <h2>🛒 Корзина</h2>
         <div id="cart-items"></div>
@@ -242,7 +231,6 @@
         </div>
     </div>
 
-    <!-- Нижнее меню -->
     <div class="bottom-nav">
         <div class="nav-item active" id="nav-store" onclick="showTab('store')">
             <span class="nav-icon">🛍</span>
@@ -259,28 +247,45 @@
     </div>
 
     <script>
-        // Инициализация Telegram Web App
         const tg = window.Telegram.WebApp;
-        tg.expand(); // Развернуть на весь экран
+        tg.expand();
         tg.setHeaderColor('#0f0f13');
         tg.setBackgroundColor('#0f0f13');
 
-        // Временные тестовые данные
-        const products = [
-            { id: 1, name: "Waka Pod 10000", price: 1200, image: "https://via.placeholder.com/150x150/2a2a35/ffffff?text=Pod" },
-            { id: 2, name: "Liquid Mango 20mg", price: 350, image: "https://via.placeholder.com/150x150/2a2a35/ffffff?text=Liquid" },
-            { id: 3, name: "Elf Bar 5000", price: 1500, image: "https://via.placeholder.com/150x150/2a2a35/ffffff?text=Elf" },
-            { id: 4, name: "Испаритель Xros", price: 250, image: "https://via.placeholder.com/150x150/2a2a35/ffffff?text=Coil" }
-        ];
-
+        // Массив товаров (изначально пустой)
+        let products = [];
         let cart = [];
 
-        // Отрисовка товаров
+        // АДРЕС ВАШЕГО API (Пока локальный)
+        // Когда выложите бота на хостинг (Render), замените этот адрес на ссылку оттуда!
+        const API_URL = 'http://127.0.0.1:8000/api/products';
+
+        // Функция загрузки товаров из базы данных бота
+        async function loadProducts() {
+            try {
+                const response = await fetch(API_URL);
+                if (!response.ok) throw new Error('Ошибка сети');
+                
+                products = await response.json();
+                
+                if (products.length === 0) {
+                    document.getElementById('product-grid').innerHTML = '<div class="loading" style="grid-column: span 2;">В магазине пока нет товаров</div>';
+                    return;
+                }
+                
+                renderProducts();
+            } catch (error) {
+                console.error("Ошибка загрузки:", error);
+                document.getElementById('product-grid').innerHTML = '<div class="loading" style="grid-column: span 2; color: #ef4444;">Не удалось загрузить товары. Убедитесь, что сервер API запущен (uvicorn).</div>';
+            }
+        }
+
+        // Отрисовка карточек товаров
         function renderProducts() {
             const grid = document.getElementById('product-grid');
             grid.innerHTML = products.map(p => `
                 <div class="product-card">
-                    <img src="${p.image}" class="product-img" alt="${p.name}">
+                    <img src="${p.image}" class="product-img" alt="${p.name}" onerror="this.src='https://via.placeholder.com/150x150/1c1c24/8b5cf6?text=VCATS'">
                     <div class="product-title">${p.name}</div>
                     <div class="product-price">${p.price} ₽</div>
                     <button class="add-btn" onclick="addToCart(${p.id})">В корзину</button>
@@ -299,9 +304,7 @@
                 cart.push({ ...product, qty: 1 });
             }
             
-            // Вибрация при добавлении
             if (tg.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
-            
             renderCart();
         }
 
@@ -333,7 +336,6 @@
             totalEl.innerText = total;
             summaryEl.style.display = 'block';
             
-            // Обновляем бейдж на иконке корзины
             const totalItems = cart.reduce((sum, item) => sum + item.qty, 0);
             badgeEl.innerText = totalItems;
             badgeEl.style.display = 'inline-block';
@@ -344,31 +346,28 @@
             document.getElementById('store-view').style.display = tab === 'store' ? 'block' : 'none';
             document.getElementById('cart-view').style.display = tab === 'cart' ? 'flex' : 'none';
             
-            // Подсветка меню
             document.getElementById('nav-store').classList.toggle('active', tab === 'store');
             document.getElementById('nav-cart').classList.toggle('active', tab === 'cart');
         }
 
-        // Оформление заказа (Отправка данных боту)
+        // Оформление заказа (отправка данных в бота)
         function checkout() {
             if (cart.length === 0) {
                 if (tg.showAlert) tg.showAlert("Корзина пуста!");
                 return;
             }
             
-            // Формируем данные для бота
             const orderData = {
                 action: "create_order",
                 items: cart,
                 total: cart.reduce((sum, item) => sum + (item.price * item.qty), 0)
             };
 
-            // Отправляем данные боту и закрываем окно
             tg.sendData(JSON.stringify(orderData));
         }
 
-        // Запуск при загрузке
-        renderProducts();
+        // Запуск при загрузке страницы
+        loadProducts();
         renderCart();
     </script>
 </body>
