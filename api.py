@@ -1,7 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-# import aiosqlite  # Пока отключим базу данных
-# from config import DB_PATH
+import os
 
 app = FastAPI()
 
@@ -15,7 +14,7 @@ app.add_middleware(
 
 @app.get("/api/products")
 async def get_products():
-    # Временно возвращаем тестовые товары, чтобы проверить работу сайта в Telegram
+    # Тестовые товары, чтобы сайт работал прямо сейчас
     return [
         {
             "id": 1,
